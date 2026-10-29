@@ -3,5 +3,5 @@ package com.example.chistopro.data.repository
 /** Контракт авторизации. ViewModel знает только об этом интерфейсе. */
 interface AuthRepository {
     /** Result.success при верных данных, иначе Result.failure с текстом ошибки. */
-    suspend fun login(login: String, password: String): Result<Unit>
+    suspend fun login(email: String, password: String): Result<Unit>
 }

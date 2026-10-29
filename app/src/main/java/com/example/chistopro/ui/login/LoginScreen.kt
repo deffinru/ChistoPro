@@ -64,7 +64,7 @@ fun LoginScreen(
 
     LoginContent(
         state = state,
-        onLoginChange = viewModel::onLoginChange,
+        onEmailChange = viewModel::onEmailChange,
         onPasswordChange = viewModel::onPasswordChange,
         onLoginClick = viewModel::onLoginClick
     )
@@ -74,7 +74,7 @@ fun LoginScreen(
 @Composable
 fun LoginContent(
     state: LoginUiState,
-    onLoginChange: (String) -> Unit,
+    onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onLoginClick: () -> Unit
 ) {
@@ -119,16 +119,16 @@ fun LoginContent(
         Spacer(Modifier.height(32.dp))
 
         TextField(
-            value = state.login,
-            onValueChange = onLoginChange,
-            placeholder = { Text("Введите логин", style = fieldTextStyle) },
+            value = state.email,
+            onValueChange = onEmailChange,
+            placeholder = { Text("Введите email", style = fieldTextStyle) },
             textStyle = fieldTextStyle,
             singleLine = true,
             enabled = !state.isLoading,
             shape = fieldShape,
             colors = fieldColors,
             keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Text,
+                keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next
             ),
             keyboardActions = KeyboardActions(
@@ -207,7 +207,7 @@ private fun LoginPreview() {
     ChistoProTheme {
         LoginContent(
             state = LoginUiState(),
-            onLoginChange = {},
+            onEmailChange = {},
             onPasswordChange = {},
             onLoginClick = {}
         )

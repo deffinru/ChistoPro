@@ -8,6 +8,7 @@ Kotlin · Jetpack Compose · MVVM · Hilt
     ├── ChistoProApp.kt            Application (включает Hilt)
     ├── MainActivity.kt            единственная Activity
     ├── data/                      MODEL: данные
+    │   ├── model/                 Order, Manager, OrderStatus
     │   └── repository/            репозитории (интерфейс + реализация)
     │   (позже: remote/ — Retrofit, dto/ — модели ответов API)
     ├── di/                        Hilt-модули (кто кого создаёт)
@@ -15,7 +16,9 @@ Kotlin · Jetpack Compose · MVVM · Hilt
         ├── navigation/            маршруты и NavHost
         ├── theme/                 цвета, тема, шрифты
         ├── login/                 LoginScreen (View) + LoginViewModel
-        └── main/                  главная панель
+        ├── home/                  главная страница (HomeScreen + HomeViewModel)
+        ├── components/            общие элементы (OrderCard)
+        └── common/                PlaceholderScreen
         (позже: orders/, workers/, services/, reports/)
 
 ## Как добавить новый экран (например, Заказы)
@@ -25,4 +28,7 @@ Kotlin · Jetpack Compose · MVVM · Hilt
 4. `data/repository/OrdersRepository.kt` (+ реализация) и привязка в `di/AppModule.kt`.
 5. Маршрут в `ui/navigation/AppNavigation.kt`.
 
-Вход: логин `admin`, пароль `admin` (заглушка FakeAuthRepository).
+Вход: email `admin@chistopro.ru`, пароль `admin` (заглушка FakeAuthRepository).
+
+Маршруты: login → home → (profile | orders | analytics | tariffs | order/{id}).
+Страницы profile/orders/analytics/tariffs/order пока PlaceholderScreen — заменяются в ui/navigation/AppNavigation.kt.

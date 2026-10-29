@@ -1,32 +1,106 @@
 package com.example.chistopro.ui.navigation
 
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.example.chistopro.ui.common.PlaceholderScreen
+import com.example.chistopro.ui.home.HomeScreen
 import com.example.chistopro.ui.login.LoginScreen
-import com.example.chistopro.ui.main.MainPlaceholderScreen
+import com.example.chistopro.ui.theme.BackgroundDark
 
 /** Адреса экранов. Новый экран = новая константа + composable в NavHost. */
 object Routes {
     const val LOGIN = "login"
-    const val MAIN = "main"
+    const val HOME = "home"
+    const val ORDERS = "orders"
+    const val ANALYTICS = "analytics"
+    const val TARIFFS = "tariffs"
+    const val PROFILE = "profile"
+
+    const val ORDER_ID_ARG = "orderId"
+    const val ORDER_DETAILS = "order/{$ORDER_ID_ARG}"
+    fun orderDetails(orderId: Int) = "order/$orderId"
 }
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = Routes.LOGIN) {
-        composable(Routes.LOGIN) {
-            LoginScreen(
-                onLoginSuccess = {
-                    navController.navigate(Routes.MAIN) {
-                        // убираем экран входа из стека, чтобы "Назад" не возвращал на него
-                        popUpTo(Routes.LOGIN) { inclusive = true }
-                    }
-                }
-            )
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+
+    // Нижняя панель видна только на четырёх основных страницах
+    val showBottomBar = BottomTab.entries.any { it.route == currentRoute }
+
+    // Переход между вкладками без накопления экранов в стеке
+    fun navigateToTab(route: String) {
+        navController.navigate(route) {
+            popUpTo(Routes.HOME) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
         }
-        composable(Routes.MAIN) { MainPlaceholderScreen() }
+    }
+
+    Scaffold(
+        containerColor = BackgroundDark,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0), // отступы от системных панелей делает каждый экран сам
+        bottomBar = {
+            if (showBottomBar) {
+                AppBottomBar(currentRoute = currentRoute, onTabClick = { navigateToTab(it) })
+            }
+        }
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = Routes.LOGIN,
+            modifier = Modifier.padding(innerPadding)
+        ) {
+            composable(Routes.LOGIN) {
+                LoginScreen(
+                    onLoginSuccess = {
+                        navController.navigate(Routes.HOME) {
+                            // убираем экран входа из стека, чтобы "Назад" не возвращал на него
+                            popUpTo(Routes.LOGIN) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            composable(Routes.HOME) {
+                HomeScreen(
+                    onOrderClick = { id -> navController.navigate(Routes.orderDetails(id)) },
+                    onProfileClick = { navController.navigate(Routes.PROFILE) },
+                    onAllOrdersClick = { navigateToTab(Routes.ORDERS) }
+                )
+            }
+
+            // Страницы-заглушки: заменяй PlaceholderScreen на настоящий экран по мере готовности
+            composable(Routes.ORDERS) { PlaceholderScreen(title = "Заказы") }
+            composable(Routes.ANALYTICS) { PlaceholderScreen(title = "Аналитика") }
+            composable(Routes.TARIFFS) { PlaceholderScreen(title = "Тарифы") }
+
+            composable(Routes.PROFILE) {
+                PlaceholderScreen(title = "Профиль", onBack = { navController.popBackStack() })
+            }
+
+            composable(
+                route = Routes.ORDER_DETAILS,
+                arguments = listOf(navArgument(Routes.ORDER_ID_ARG) { type = NavType.IntType })
+            ) { entry ->
+                val orderId = entry.arguments?.getInt(Routes.ORDER_ID_ARG) ?: 0
+                PlaceholderScreen(
+                    title = "Заказ №$orderId",
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
     }
 }
