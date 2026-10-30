@@ -11,35 +11,26 @@ class FakeOrdersRepository @Inject constructor() : OrdersRepository {
 
     private val orders: List<Order> by lazy {
         val today = LocalDate.now()
-        val main = listOf(
-            Order(
-                id = 1, address = "ул. Ленина, 45, кв. 12", serviceName = "Поддерживающая",
-                area = 54.0, totalPrice = 4320.0, scheduledAt = today.atTime(10, 0),
-                durationHours = 3, status = OrderStatus.IN_PROGRESS,
-                clientName = "Иван Петров", clientPhone = "+7 900 111-22-33"
-            ),
-            Order(
-                id = 2, address = "пр. Мира, 10, офис 301", serviceName = "Генеральная",
-                area = 80.0, totalPrice = 9600.0, scheduledAt = today.atTime(13, 30),
-                durationHours = 4, status = OrderStatus.NEW,
-                clientName = "ООО «Ромашка»", clientPhone = "+7 900 222-33-44"
-            ),
-            Order(
-                id = 3, address = "Садовая, 7, кв. 88", serviceName = "Поддерживающая",
-                area = 40.0, totalPrice = 3200.0, scheduledAt = today.atTime(8, 0),
-                durationHours = 2, status = OrderStatus.DONE,
-                clientName = "Мария Смирнова", clientPhone = "+7 900 333-44-55"
-            )
+        fun order(
+            id: Int, address: String, service: String, area: Double, price: Double,
+            hour: Int, minute: Int, status: OrderStatus
+        ) = Order(
+            id = id, address = address, serviceName = service, area = area, totalPrice = price,
+            scheduledAt = today.atTime(hour, minute), status = status,
+            clientName = "Клиент $id", clientPhone = "+7 900 000-00-0$id"
         )
-        // ещё 15 выполненных заказов, чтобы счётчик показывал 18, как на макете
-        val extra = (4..18).map { i ->
-            Order(
-                id = i, address = "Тестовая ул., $i", serviceName = "Поддерживающая",
-                area = 30.0 + i, totalPrice = 2500.0 + i * 50, scheduledAt = today.atTime(7, 0),
-                durationHours = 2, status = OrderStatus.DONE
-            )
-        }
-        main + extra
+        listOf(
+            order(1, "ул. Ленина, 45, кв. 12", "Генеральная уборка", 120.0, 8400.0, 10, 0, OrderStatus.IN_PROGRESS),
+            order(2, "пр. Мира, 10, офис 301", "Офисы и бизнес", 85.0, 6200.0, 13, 30, OrderStatus.NEW),
+            order(3, "Садовая, 7, кв. 88", "Стандартная уборка", 210.0, 14500.0, 8, 0, OrderStatus.DONE),
+            order(4, "ул. Гагарина, 3, кв. 5", "Стандартная уборка", 60.0, 6600.0, 15, 0, OrderStatus.CONFIRMED),
+            order(5, "ул. Победы, 21", "После ремонта", 95.0, 20900.0, 16, 0, OrderStatus.CONFIRMED),
+            order(6, "пер. Тихий, 2, кв. 14", "Мойка окон", 40.0, 2400.0, 17, 30, OrderStatus.NEW),
+            order(7, "ул. Кирова, 18, кв. 9", "Химчистка мебели", 25.0, 3750.0, 9, 0, OrderStatus.DONE),
+            order(8, "ул. Чехова, 4", "Стандартная уборка", 70.0, 7700.0, 9, 30, OrderStatus.DONE),
+            order(9, "пр. Ленина, 100, офис 12", "Офисы и бизнес", 150.0, 15000.0, 7, 0, OrderStatus.DONE),
+            order(10, "ул. Мичурина, 8, кв. 33", "Генеральная уборка", 55.0, 9900.0, 11, 0, OrderStatus.CANCELLED)
+        )
     }
 
     override suspend fun getOrders(): Result<List<Order>> {

@@ -3,17 +3,7 @@ package com.example.chistopro.ui.home
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -27,25 +17,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.chistopro.ui.components.OrderCard
-import com.example.chistopro.ui.theme.AccentCyan
-import com.example.chistopro.ui.theme.BackgroundDark
-import com.example.chistopro.ui.theme.ButtonBlue
-import com.example.chistopro.ui.theme.CardBorder
-import com.example.chistopro.ui.theme.ChipCyanBg
-import com.example.chistopro.ui.theme.ChipNeutralBg
-import com.example.chistopro.ui.theme.HeaderEnd
-import com.example.chistopro.ui.theme.HeaderStart
-import com.example.chistopro.ui.theme.SurfaceCard
-import com.example.chistopro.ui.theme.TextSecondary
+import com.example.chistopro.ui.components.ScreenHeader
+import com.example.chistopro.ui.theme.*
 
 /** Stateful-обёртка: связывает экран с HomeViewModel. */
 @Composable
@@ -56,6 +38,13 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // при возврате на экран тихо обновляем данные (например, пришли новые заказы с сайта)
+    LifecycleResumeEffect(Unit) {
+        viewModel.refresh()
+        onPauseOrDispose { }
+    }
+
     HomeContent(
         state = state,
         onOrderClick = onOrderClick,
@@ -106,17 +95,18 @@ fun HomeContent(
 
             else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
                 item {
-                    HomeHeader(
-                        greeting = state.greeting,
-                        name = state.managerName,
+                    ScreenHeader(
+                        subtitle = "ЧИСТО PRO — Управление",
+                        title = "${state.greeting}, ${state.managerName}",
                         dateText = state.dateText,
-                        avatarLetter = state.avatarLetter,
-                        onProfileClick = onProfileClick
+                        trailing = {
+                            AvatarButton(letter = state.avatarLetter, onClick = onProfileClick)
+                        }
                     )
                 }
                 item {
                     StatCard(
-                        count = state.ordersCount,
+                        count = state.activeCount,
                         modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp)
                     )
                 }
@@ -148,7 +138,7 @@ fun HomeContent(
                 if (state.orders.isEmpty()) {
                     item {
                         Text(
-                            text = "Сегодня заказов нет",
+                            text = "Заказов пока нет",
                             color = TextSecondary,
                             modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
                         )
@@ -168,63 +158,23 @@ fun HomeContent(
     }
 }
 
+/** Кружок с первой буквой имени — переход в профиль. */
 @Composable
-private fun HomeHeader(
-    greeting: String,
-    name: String,
-    dateText: String,
-    avatarLetter: String,
-    onProfileClick: () -> Unit
-) {
-    Row(
+private fun AvatarButton(letter: String, onClick: () -> Unit) {
+    Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .background(Brush.horizontalGradient(listOf(HeaderStart, HeaderEnd)))
-            .statusBarsPadding() // градиент заходит под статус-бар, как на макете
-            .padding(horizontal = 20.dp, vertical = 18.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Top
+            .size(48.dp)
+            .clip(CircleShape)
+            .background(ChipCyanBg.copy(alpha = 0.6f))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = "ЧИСТО PRO — Управление",
-                color = AccentCyan,
-                fontSize = 14.sp
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = "$greeting, $name",
-                color = Color.White,
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(Modifier.height(12.dp))
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(ChipNeutralBg)
-                    .padding(horizontal = 14.dp, vertical = 8.dp)
-            ) {
-                Text(text = dateText, color = Color(0xFFB8C7D6), fontSize = 14.sp)
-            }
-        }
-        Spacer(Modifier.size(12.dp))
-        // Кнопка профиля
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(ChipCyanBg.copy(alpha = 0.6f))
-                .clickable(onClick = onProfileClick),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = avatarLetter,
-                color = AccentCyan,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
+        Text(
+            text = letter,
+            color = AccentCyan,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 
@@ -246,6 +196,6 @@ private fun StatCard(count: Int, modifier: Modifier = Modifier) {
             fontWeight = FontWeight.Bold
         )
         Spacer(Modifier.height(4.dp))
-        Text(text = "Заказов", color = TextSecondary, fontSize = 13.sp)
+        Text(text = "Активных заказов", color = TextSecondary, fontSize = 13.sp)
     }
 }

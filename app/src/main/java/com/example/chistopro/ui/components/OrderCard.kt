@@ -3,16 +3,7 @@ package com.example.chistopro.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -27,15 +18,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.chistopro.data.model.Order
 import com.example.chistopro.data.model.OrderStatus
-import com.example.chistopro.ui.theme.AccentCyan
-import com.example.chistopro.ui.theme.AccentGreen
-import com.example.chistopro.ui.theme.AccentOrange
-import com.example.chistopro.ui.theme.CardBorder
-import com.example.chistopro.ui.theme.ChipCyanBg
-import com.example.chistopro.ui.theme.ChipGreenBg
-import com.example.chistopro.ui.theme.ChipOrangeBg
-import com.example.chistopro.ui.theme.SurfaceCard
-import com.example.chistopro.ui.theme.TextSecondary
+import com.example.chistopro.ui.theme.*
+import com.example.chistopro.util.formatArea
+import com.example.chistopro.util.formatPrice
 import java.time.format.DateTimeFormatter
 
 private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
@@ -43,36 +28,35 @@ private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 private data class StatusStyle(val accent: Color, val chipBackground: Color)
 
 private fun OrderStatus.style() = when (this) {
-    OrderStatus.IN_PROGRESS -> StatusStyle(AccentCyan, ChipCyanBg)
     OrderStatus.NEW -> StatusStyle(AccentOrange, ChipOrangeBg)
+    OrderStatus.CONFIRMED -> StatusStyle(AccentPurple, ChipPurpleBg)
+    OrderStatus.IN_PROGRESS -> StatusStyle(AccentCyan, ChipCyanBg)
     OrderStatus.DONE -> StatusStyle(AccentGreen, ChipGreenBg)
+    OrderStatus.CANCELLED -> StatusStyle(AccentRed, ChipRedBg)
 }
 
-/** Карточка заказа. Используется на главной и позже на странице «Заказы». */
+private fun Order.chipText(): String = when (status) {
+    OrderStatus.NEW -> scheduledAt?.format(timeFormatter) ?: "Новый" // как на макете: время начала
+    OrderStatus.CONFIRMED -> "Подтверждён"
+    OrderStatus.IN_PROGRESS -> "В работе"
+    OrderStatus.DONE -> "Готово"
+    OrderStatus.CANCELLED -> "Отменён"
+}
+
+/**
+ * Карточка заказа.
+ * showDetails = false — компактная (главная), true — с площадью и стоимостью (страница «Заказы»).
+ */
 @Composable
 fun OrderCard(
     order: Order,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showDetails: Boolean = false
 ) {
     val shape = RoundedCornerShape(20.dp)
     val style = order.status.style()
-    val isDone = order.status == OrderStatus.DONE
-
-    val chipText = when (order.status) {
-        OrderStatus.IN_PROGRESS -> "В работе"
-        OrderStatus.NEW -> order.scheduledAt.format(timeFormatter)
-        OrderStatus.DONE -> "Готово"
-    }
-    val subtitle: String? = when (order.status) {
-        OrderStatus.IN_PROGRESS -> {
-            val start = order.scheduledAt.format(timeFormatter)
-            val end = order.scheduledAt.plusHours(order.durationHours.toLong()).format(timeFormatter)
-            "$start – $end"
-        }
-        OrderStatus.NEW -> "${order.serviceName}, ${order.durationHours} ч."
-        OrderStatus.DONE -> null
-    }
+    val isFinished = !order.status.isActive
 
     Column(
         modifier = modifier
@@ -101,7 +85,7 @@ fun OrderCard(
                 Spacer(Modifier.width(12.dp))
                 Text(
                     text = order.address,
-                    color = if (isDone) TextSecondary else Color.White,
+                    color = if (isFinished) TextSecondary else Color.White,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
@@ -116,17 +100,42 @@ fun OrderCard(
                     .padding(horizontal = 12.dp, vertical = 5.dp)
             ) {
                 Text(
-                    text = chipText,
+                    text = order.chipText(),
                     color = style.accent,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
                 )
             }
         }
-        if (subtitle != null) {
+
+        if (showDetails) {
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = "${formatArea(order.area)} м²",
+                color = TextSecondary,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(start = 20.dp)
+            )
+            Spacer(Modifier.height(10.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Примерная стоимость", color = TextSecondary, fontSize = 14.sp)
+                Text(
+                    text = formatPrice(order.totalPrice),
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        } else if (!isFinished) {
             Spacer(Modifier.height(8.dp))
             Text(
-                text = subtitle,
+                text = "${order.serviceName}, ${formatArea(order.area)} м²",
                 color = TextSecondary,
                 fontSize = 14.sp,
                 modifier = Modifier.padding(start = 20.dp)

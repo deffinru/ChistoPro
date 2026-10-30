@@ -2,13 +2,28 @@ package com.example.chistopro.data.model
 
 import java.time.LocalDateTime
 
-/** Статус заказа (в БД это таблица Statuses — названия нужно сверить с одногруппником). */
-enum class OrderStatus { NEW, IN_PROGRESS, DONE }
+/**
+ * Статус заказа. apiName — значение в таблице Statuses (поле name).
+ */
+enum class OrderStatus(val apiName: String) {
+    NEW("new"),
+    CONFIRMED("confirmed"),
+    IN_PROGRESS("in_progress"),
+    DONE("done"),
+    CANCELLED("cancelled");
+
+    /** Активный = ещё не завершён и не отменён. */
+    val isActive: Boolean get() = this == NEW || this == CONFIRMED || this == IN_PROGRESS
+
+    companion object {
+        fun fromApi(name: String): OrderStatus =
+            entries.firstOrNull { it.apiName.equals(name, ignoreCase = true) } ?: NEW
+    }
+}
 
 /**
- * Заказ. Поля соответствуют таблице Orders:
- * address, area, scheduled_at, comment, total_price, status_id, service -> Services.name.
- * durationHours в БД пока нет — нужно договориться (например, считать от площади).
+ * Заказ (таблица Orders): address, area, scheduled_at, comment, total_price,
+ * status_id -> Statuses.name, service_id -> Services.name.
  */
 data class Order(
     val id: Int,
@@ -16,8 +31,7 @@ data class Order(
     val serviceName: String,
     val area: Double,
     val totalPrice: Double,
-    val scheduledAt: LocalDateTime,
-    val durationHours: Int,
+    val scheduledAt: LocalDateTime?,
     val status: OrderStatus,
     val clientName: String = "",
     val clientPhone: String = "",

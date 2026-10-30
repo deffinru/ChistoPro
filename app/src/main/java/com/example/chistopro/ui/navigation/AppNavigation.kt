@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
@@ -15,7 +16,11 @@ import androidx.navigation.navArgument
 import com.example.chistopro.ui.common.PlaceholderScreen
 import com.example.chistopro.ui.home.HomeScreen
 import com.example.chistopro.ui.login.LoginScreen
+import com.example.chistopro.ui.orders.OrdersScreen
+import com.example.chistopro.ui.profile.EditProfileScreen
+import com.example.chistopro.ui.profile.ProfileScreen
 import com.example.chistopro.ui.theme.BackgroundDark
+import kotlinx.coroutines.flow.Flow
 
 /** Адреса экранов. Новый экран = новая константа + composable в NavHost. */
 object Routes {
@@ -25,6 +30,7 @@ object Routes {
     const val ANALYTICS = "analytics"
     const val TARIFFS = "tariffs"
     const val PROFILE = "profile"
+    const val PROFILE_EDIT = "profile/edit"
 
     const val ORDER_ID_ARG = "orderId"
     const val ORDER_DETAILS = "order/{$ORDER_ID_ARG}"
@@ -32,10 +38,22 @@ object Routes {
 }
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(
+    startDestination: String,
+    sessionExpired: Flow<Unit>
+) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+
+    // Токен перестал действовать -> возвращаем на экран входа
+    LaunchedEffect(Unit) {
+        sessionExpired.collect {
+            navController.navigate(Routes.LOGIN) {
+                popUpTo(navController.graph.id) { inclusive = true }
+            }
+        }
+    }
 
     // Нижняя панель видна только на четырёх основных страницах
     val showBottomBar = BottomTab.entries.any { it.route == currentRoute }
@@ -60,7 +78,7 @@ fun AppNavigation() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Routes.LOGIN,
+            startDestination = startDestination,
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Routes.LOGIN) {
@@ -82,13 +100,28 @@ fun AppNavigation() {
                 )
             }
 
-            // Страницы-заглушки: заменяй PlaceholderScreen на настоящий экран по мере готовности
-            composable(Routes.ORDERS) { PlaceholderScreen(title = "Заказы") }
+            // Страницы-заглушки (аналитика, тарифы, заказ): заменяй PlaceholderScreen на настоящий экран
+            composable(Routes.ORDERS) {
+                OrdersScreen(onOrderClick = { id -> navController.navigate(Routes.orderDetails(id)) })
+            }
             composable(Routes.ANALYTICS) { PlaceholderScreen(title = "Аналитика") }
             composable(Routes.TARIFFS) { PlaceholderScreen(title = "Тарифы") }
 
             composable(Routes.PROFILE) {
-                PlaceholderScreen(title = "Профиль", onBack = { navController.popBackStack() })
+                ProfileScreen(
+                    onBack = { navController.popBackStack() },
+                    onEditClick = { navController.navigate(Routes.PROFILE_EDIT) },
+                    onLoggedOut = {
+                        // после выхода очищаем весь стек и открываем экран входа
+                        navController.navigate(Routes.LOGIN) {
+                            popUpTo(navController.graph.id) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            composable(Routes.PROFILE_EDIT) {
+                EditProfileScreen(onBack = { navController.popBackStack() })
             }
 
             composable(

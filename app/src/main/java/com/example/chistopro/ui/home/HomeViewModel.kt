@@ -6,15 +6,15 @@ import com.example.chistopro.data.model.Order
 import com.example.chistopro.data.model.OrderStatus
 import com.example.chistopro.data.repository.OrdersRepository
 import com.example.chistopro.data.repository.ProfileRepository
+import com.example.chistopro.util.formatFullDate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 import javax.inject.Inject
 
 data class HomeUiState(
@@ -23,7 +23,8 @@ data class HomeUiState(
     val managerName: String = "",
     val avatarLetter: String = "",
     val dateText: String = "",
-    val ordersCount: Int = 0,
+    /** Количество АКТИВНЫХ заказов (новые, подтверждённые, в работе). */
+    val activeCount: Int = 0,
     val orders: List<Order> = emptyList(),
     val errorMessage: String? = null
 )
@@ -38,37 +39,51 @@ class HomeViewModel @Inject constructor(
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
+        // имя обновляется автоматически, если его изменили в профиле
+        viewModelScope.launch {
+            profileRepository.manager.filterNotNull().collect { m ->
+                _uiState.update {
+                    it.copy(managerName = m.name, avatarLetter = m.name.take(1).uppercase())
+                }
+            }
+        }
         load()
     }
 
-    fun load() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+    fun load() = fetch(showLoading = true)
 
-            val managerResult = profileRepository.getManager()
+    /** Тихое обновление без индикатора загрузки (при возврате на экран). */
+    fun refresh() {
+        if (!_uiState.value.isLoading) fetch(showLoading = false)
+    }
+
+    private fun fetch(showLoading: Boolean) {
+        viewModelScope.launch {
+            if (showLoading) _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+
+            val managerResult = profileRepository.loadManager()
             val ordersResult = ordersRepository.getOrders()
 
             val error = managerResult.exceptionOrNull() ?: ordersResult.exceptionOrNull()
             if (error != null) {
-                _uiState.update {
-                    it.copy(isLoading = false, errorMessage = error.message ?: "Не удалось загрузить данные")
+                if (showLoading) {
+                    _uiState.update {
+                        it.copy(isLoading = false, errorMessage = error.message ?: "Не удалось загрузить данные")
+                    }
                 }
                 return@launch
             }
 
-            val manager = managerResult.getOrThrow()
             val orders = ordersResult.getOrThrow()
             val now = LocalDateTime.now()
 
             _uiState.update {
                 it.copy(
                     isLoading = false,
+                    errorMessage = null,
                     greeting = greetingFor(now.hour),
-                    managerName = manager.name,
-                    avatarLetter = manager.name.take(1).uppercase(),
-                    dateText = formatDate(now),
-                    ordersCount = orders.size,
-                    // на главной: сначала в работе, затем новые, затем выполненные; показываем 3
+                    dateText = formatFullDate(now),
+                    activeCount = orders.count { o -> o.status.isActive },
                     orders = orders.sortedBy { o -> priority(o.status) }.take(HOME_ORDERS_LIMIT)
                 )
             }
@@ -78,7 +93,9 @@ class HomeViewModel @Inject constructor(
     private fun priority(status: OrderStatus) = when (status) {
         OrderStatus.IN_PROGRESS -> 0
         OrderStatus.NEW -> 1
-        OrderStatus.DONE -> 2
+        OrderStatus.CONFIRMED -> 2
+        OrderStatus.DONE -> 3
+        OrderStatus.CANCELLED -> 4
     }
 
     private fun greetingFor(hour: Int) = when (hour) {
@@ -87,10 +104,6 @@ class HomeViewModel @Inject constructor(
         in 18..22 -> "Добрый вечер"
         else -> "Доброй ночи"
     }
-
-    private fun formatDate(dateTime: LocalDateTime): String =
-        dateTime.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", Locale.forLanguageTag("ru")))
-            .replaceFirstChar { it.uppercase() }
 
     private companion object {
         const val HOME_ORDERS_LIMIT = 3

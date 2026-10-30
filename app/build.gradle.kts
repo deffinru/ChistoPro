@@ -15,6 +15,10 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
+
+        // Адрес API. Эмулятор: 10.0.2.2 = компьютер, на котором запущен API.
+        // Для реального телефона замени на http://IP_КОМПЬЮТЕРА:3000/
+        buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/\"")
     }
 
     buildTypes {
@@ -32,6 +36,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -52,11 +57,13 @@ dependencies {
     // Навигация
     implementation(libs.androidx.navigation.compose)
 
+    // Сеть (запросы к API)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp.logging)
+
     // Hilt (внедрение зависимостей)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
-
-    implementation("androidx.compose.material:material-icons-core")
-
 }
