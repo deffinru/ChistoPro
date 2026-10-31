@@ -13,14 +13,16 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.chistopro.ui.common.PlaceholderScreen
 import com.example.chistopro.ui.home.HomeScreen
 import com.example.chistopro.ui.login.LoginScreen
+import com.example.chistopro.ui.orderdetails.OrderDetailsScreen
 import com.example.chistopro.ui.orders.OrdersScreen
 import com.example.chistopro.ui.profile.EditProfileScreen
 import com.example.chistopro.ui.profile.ProfileScreen
 import com.example.chistopro.ui.theme.BackgroundDark
 import kotlinx.coroutines.flow.Flow
+import com.example.chistopro.ui.analytics.AnalyticsScreen
+import com.example.chistopro.ui.tariffs.TariffsScreen
 
 /** Адреса экранов. Новый экран = новая константа + composable в NavHost. */
 object Routes {
@@ -55,15 +57,19 @@ fun AppNavigation(
         }
     }
 
-    // Нижняя панель видна только на четырёх основных страницах
-    val showBottomBar = BottomTab.entries.any { it.route == currentRoute }
+    // Нижняя панель: на четырёх основных страницах и на странице заказа (как на макете)
+    val onOrderDetails = currentRoute == Routes.ORDER_DETAILS
+    val showBottomBar = onOrderDetails || BottomTab.entries.any { it.route == currentRoute }
+    // на странице заказа подсвечена вкладка «Заказы»
+    val selectedTabRoute = if (onOrderDetails) Routes.ORDERS else currentRoute
 
     // Переход между вкладками без накопления экранов в стеке
     fun navigateToTab(route: String) {
         navController.navigate(route) {
-            popUpTo(Routes.HOME) { saveState = true }
+            // со страницы заказа вкладку открываем «с чистого листа»
+            popUpTo(Routes.HOME) { saveState = !onOrderDetails }
             launchSingleTop = true
-            restoreState = true
+            restoreState = !onOrderDetails
         }
     }
 
@@ -72,7 +78,7 @@ fun AppNavigation(
         contentWindowInsets = WindowInsets(0, 0, 0, 0), // отступы от системных панелей делает каждый экран сам
         bottomBar = {
             if (showBottomBar) {
-                AppBottomBar(currentRoute = currentRoute, onTabClick = { navigateToTab(it) })
+                AppBottomBar(currentRoute = selectedTabRoute, onTabClick = { navigateToTab(it) })
             }
         }
     ) { innerPadding ->
@@ -100,12 +106,12 @@ fun AppNavigation(
                 )
             }
 
-            // Страницы-заглушки (аналитика, тарифы, заказ): заменяй PlaceholderScreen на настоящий экран
             composable(Routes.ORDERS) {
                 OrdersScreen(onOrderClick = { id -> navController.navigate(Routes.orderDetails(id)) })
             }
-            composable(Routes.ANALYTICS) { PlaceholderScreen(title = "Аналитика") }
-            composable(Routes.TARIFFS) { PlaceholderScreen(title = "Тарифы") }
+
+            composable(Routes.ANALYTICS) { AnalyticsScreen() }
+            composable(Routes.TARIFFS) { TariffsScreen() }
 
             composable(Routes.PROFILE) {
                 ProfileScreen(
@@ -127,12 +133,8 @@ fun AppNavigation(
             composable(
                 route = Routes.ORDER_DETAILS,
                 arguments = listOf(navArgument(Routes.ORDER_ID_ARG) { type = NavType.IntType })
-            ) { entry ->
-                val orderId = entry.arguments?.getInt(Routes.ORDER_ID_ARG) ?: 0
-                PlaceholderScreen(
-                    title = "Заказ №$orderId",
-                    onBack = { navController.popBackStack() }
-                )
+            ) {
+                OrderDetailsScreen(onBack = { navController.popBackStack() })
             }
         }
     }

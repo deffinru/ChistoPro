@@ -1,4 +1,4 @@
-# ЧистоPro — приложение управляющего
+# ЧистоPro - приложение управляющего
 
 Kotlin · Jetpack Compose · MVVM · Hilt
 
@@ -20,15 +20,12 @@ Kotlin · Jetpack Compose · MVVM · Hilt
         ├── login/                 LoginScreen (View) + LoginViewModel
         ├── home/                  главная страница (HomeScreen + HomeViewModel)
         ├── orders/                страница «Заказы»
+        ├── orderdetails/          страница заказа (статус, сотрудник)
         ├── profile/               профиль + редактирование (имя, пароль)
         ├── components/            общие элементы (OrderCard, ScreenHeader, AppTextField)
         └── common/                PlaceholderScreen
         (позже: orders/, workers/, services/, reports/)
 
 Приложение работает с настоящим API (папка chistopro-api). Вход: manager@chistopro.ru / manager123.
-Адрес API задаётся в app/build.gradle.kts (API_BASE_URL): эмулятор — http://10.0.2.2:3000/,
-реальный телефон — http://IP_КОМПЬЮТЕРА:3000/.
-Тестовые данные без сервера: в di/AppModule.kt замени Remote... на Fake...
-
-Маршруты: login → home → (profile | orders | analytics | tariffs | order/{id}).
-Профиль, редактирование профиля и заказы готовы. Аналитика/тарифы/страница заказа пока PlaceholderScreen — заменяются в ui/navigation/AppNavigation.kt.
+Адрес API задаётся в app/build.gradle.kts (API_BASE_URL): эмулятор - http://10.0.2.2:3000/
+Тестовых заглушек больше нет: приложению нужен запущенный API.

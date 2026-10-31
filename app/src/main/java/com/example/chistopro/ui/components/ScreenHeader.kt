@@ -3,6 +3,10 @@ package com.example.chistopro.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -37,13 +41,17 @@ fun DateChip(text: String) {
     }
 }
 
-/** Общая шапка главной и страницы «Заказы». */
+/**
+ * Общая шапка. onBack != null — перед заголовком показывается стрелка «Назад»
+ * (страница заказа).
+ */
 @Composable
 fun ScreenHeader(
     subtitle: String,
     title: String,
     modifier: Modifier = Modifier,
     dateText: String? = null,
+    onBack: (() -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null
 ) {
     Row(
@@ -57,12 +65,28 @@ fun ScreenHeader(
         Column(modifier = Modifier.weight(1f)) {
             Text(text = subtitle, color = AccentCyan, fontSize = 14.sp)
             Spacer(Modifier.height(4.dp))
-            Text(
-                text = title,
-                color = Color.White,
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (onBack != null) {
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .offset(x = (-6).dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Назад",
+                            tint = Color.White
+                        )
+                    }
+                }
+                Text(
+                    text = title,
+                    color = Color.White,
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
             if (dateText != null) {
                 Spacer(Modifier.height(12.dp))
                 DateChip(dateText)

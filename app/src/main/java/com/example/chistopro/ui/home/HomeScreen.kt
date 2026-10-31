@@ -28,6 +28,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.chistopro.ui.components.OrderCard
 import com.example.chistopro.ui.components.ScreenHeader
 import com.example.chistopro.ui.theme.*
+import com.example.chistopro.util.rememberTodayText
 
 /** Stateful-обёртка: связывает экран с HomeViewModel. */
 @Composable
@@ -98,7 +99,7 @@ fun HomeContent(
                     ScreenHeader(
                         subtitle = "ЧИСТО PRO — Управление",
                         title = "${state.greeting}, ${state.managerName}",
-                        dateText = state.dateText,
+                        dateText = rememberTodayText(),
                         trailing = {
                             AvatarButton(letter = state.avatarLetter, onClick = onProfileClick)
                         }

@@ -29,6 +29,7 @@ fun AppTextField(
     label: String,
     modifier: Modifier = Modifier,
     isPassword: Boolean = false,
+    keyboardType: KeyboardType = if (isPassword) KeyboardType.Password else KeyboardType.Text,
     enabled: Boolean = true,
     isLast: Boolean = false,
     onDone: () -> Unit = {}
@@ -58,7 +59,7 @@ fun AppTextField(
             disabledIndicatorColor = Color.Transparent
         ),
         keyboardOptions = KeyboardOptions(
-            keyboardType = if (isPassword) KeyboardType.Password else KeyboardType.Text,
+            keyboardType = keyboardType,
             imeAction = if (isLast) ImeAction.Done else ImeAction.Next
         ),
         keyboardActions = KeyboardActions(

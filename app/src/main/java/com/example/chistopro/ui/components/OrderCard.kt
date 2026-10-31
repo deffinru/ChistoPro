@@ -18,44 +18,33 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.chistopro.data.model.Order
 import com.example.chistopro.data.model.OrderStatus
-import com.example.chistopro.ui.theme.*
+import com.example.chistopro.ui.theme.CardBorder
+import com.example.chistopro.ui.theme.SurfaceCard
+import com.example.chistopro.ui.theme.TextSecondary
 import com.example.chistopro.util.formatArea
 import com.example.chistopro.util.formatPrice
 import java.time.format.DateTimeFormatter
 
 private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
-private data class StatusStyle(val accent: Color, val chipBackground: Color)
-
-private fun OrderStatus.style() = when (this) {
-    OrderStatus.NEW -> StatusStyle(AccentOrange, ChipOrangeBg)
-    OrderStatus.CONFIRMED -> StatusStyle(AccentPurple, ChipPurpleBg)
-    OrderStatus.IN_PROGRESS -> StatusStyle(AccentCyan, ChipCyanBg)
-    OrderStatus.DONE -> StatusStyle(AccentGreen, ChipGreenBg)
-    OrderStatus.CANCELLED -> StatusStyle(AccentRed, ChipRedBg)
-}
-
-private fun Order.chipText(): String = when (status) {
-    OrderStatus.NEW -> scheduledAt?.format(timeFormatter) ?: "Новый" // как на макете: время начала
-    OrderStatus.CONFIRMED -> "Подтверждён"
-    OrderStatus.IN_PROGRESS -> "В работе"
-    OrderStatus.DONE -> "Готово"
-    OrderStatus.CANCELLED -> "Отменён"
-}
+private fun Order.chipText(): String =
+    if (status == OrderStatus.NEW) scheduledAt?.format(timeFormatter) ?: status.label() // как на макете: время начала
+    else status.label()
 
 /**
  * Карточка заказа.
- * showDetails = false — компактная (главная), true — с площадью и стоимостью (страница «Заказы»).
+ * showDetails = false — компактная (главная), true — с площадью и стоимостью.
+ * onClick = null — карточка не нажимается (на странице самого заказа).
  */
 @Composable
 fun OrderCard(
     order: Order,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
     showDetails: Boolean = false
 ) {
     val shape = RoundedCornerShape(20.dp)
-    val style = order.status.style()
+    val accent = order.status.accentColor()
     val isFinished = !order.status.isActive
 
     Column(
@@ -64,7 +53,7 @@ fun OrderCard(
             .clip(shape)
             .background(SurfaceCard)
             .border(1.dp, CardBorder, shape)
-            .clickable(onClick = onClick)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(16.dp)
     ) {
         Row(
@@ -80,7 +69,7 @@ fun OrderCard(
                     modifier = Modifier
                         .size(8.dp)
                         .clip(CircleShape)
-                        .background(style.accent)
+                        .background(accent)
                 )
                 Spacer(Modifier.width(12.dp))
                 Text(
@@ -96,12 +85,12 @@ fun OrderCard(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(50))
-                    .background(style.chipBackground)
+                    .background(order.status.chipBackground())
                     .padding(horizontal = 12.dp, vertical = 5.dp)
             ) {
                 Text(
                     text = order.chipText(),
-                    color = style.accent,
+                    color = accent,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
                 )

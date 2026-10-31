@@ -26,6 +26,7 @@ import com.example.chistopro.ui.theme.AccentCyan
 import com.example.chistopro.ui.theme.BackgroundDark
 import com.example.chistopro.ui.theme.ButtonBlue
 import com.example.chistopro.ui.theme.TextSecondary
+import com.example.chistopro.util.rememberTodayText
 
 @Composable
 fun OrdersScreen(
@@ -69,7 +70,7 @@ fun OrdersScreen(
                     ScreenHeader(
                         subtitle = "ЧИСТО PRO — Заказы",
                         title = "Заказы компании",
-                        dateText = state.dateText
+                        dateText = rememberTodayText()
                     )
                 }
                 item {

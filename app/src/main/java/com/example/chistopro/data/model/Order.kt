@@ -2,9 +2,7 @@ package com.example.chistopro.data.model
 
 import java.time.LocalDateTime
 
-/**
- * Статус заказа. apiName — значение в таблице Statuses (поле name).
- */
+/** Статус заказа. apiName — значение в таблице Statuses (поле name). */
 enum class OrderStatus(val apiName: String) {
     NEW("new"),
     CONFIRMED("confirmed"),
@@ -22,18 +20,22 @@ enum class OrderStatus(val apiName: String) {
 }
 
 /**
- * Заказ (таблица Orders): address, area, scheduled_at, comment, total_price,
- * status_id -> Statuses.name, service_id -> Services.name.
+ * Заказ (таблица Orders + связанные таблицы):
+ * service_id -> Services (тариф), room_type_id -> RoomTypes, user_id -> клиент, emp_id -> сотрудник.
  */
 data class Order(
     val id: Int,
     val address: String,
     val serviceName: String,
+    val pricePerM2: Double,
+    val roomType: String?,
     val area: Double,
     val totalPrice: Double,
     val scheduledAt: LocalDateTime?,
     val status: OrderStatus,
-    val clientName: String = "",
-    val clientPhone: String = "",
-    val comment: String? = null
+    val clientName: String,
+    val clientPhone: String,
+    val employeeId: Int?,
+    val employeeName: String?,
+    val comment: String?
 )
